@@ -166,3 +166,13 @@ def test_setup_metadata(make_app, rootdir: Path) -> None:
     assert metadata.version == sphinx_eu_ai_label.__version__
     assert metadata.parallel_read_safe
     assert metadata.parallel_write_safe
+
+
+@pytest.mark.sphinx("html", testroot="basic")
+def test_icons_bundled_and_copied(app: SphinxTestApp) -> None:
+    app.build()
+    for kind in sphinx_eu_ai_label.KINDS:
+        for variant in sphinx_eu_ai_label.VARIANTS[1:]:  # Everything except "auto"
+            path = sphinx_eu_ai_label.icon_path(kind, variant)
+            assert (sphinx_eu_ai_label.STATIC_DIR / path).is_file()
+            assert (Path(app.outdir) / "_static" / path).is_file()
