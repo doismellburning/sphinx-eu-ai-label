@@ -1,0 +1,48 @@
+.eu-ai-label {
+  align-items: center;
+  gap: 0.4em;
+}
+
+.eu-ai-label-block {
+  display: flex;
+  margin: 0 0 1em;
+}
+
+.eu-ai-label-align-left {
+  justify-content: flex-start;
+}
+
+.eu-ai-label-align-center {
+  justify-content: center;
+}
+
+.eu-ai-label-align-right {
+  justify-content: flex-end;
+}
+
+.eu-ai-label-inline {
+  display: inline-flex;
+  gap: 0.25em;
+  vertical-align: middle;
+}
+
+.eu-ai-label img.eu-ai-label-icon {
+  display: block;
+  width: auto;
+  max-width: none;
+  margin: 0;
+}
+
+.eu-ai-label img.eu-ai-label-icon-dark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .eu-ai-label img.eu-ai-label-icon-light {
+    display: none;
+  }
+
+  .eu-ai-label img.eu-ai-label-icon-dark {
+    display: block;
+  }
+}
