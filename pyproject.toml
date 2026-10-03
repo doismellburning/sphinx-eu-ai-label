@@ -48,6 +48,9 @@ select = [
 	"LOG",  # flake8-logging
 ]
 
+[tool.ruff.lint.per-file-ignores]
+"test/roots/**" = ["INP001"]
+
 [dependency-groups]
 dev = [
     "beautifulsoup4",
