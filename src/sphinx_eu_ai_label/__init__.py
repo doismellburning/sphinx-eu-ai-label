@@ -26,15 +26,10 @@ KINDS = ("basic", "generated", "modified")
 VARIANTS = ("auto", "black", "white", "black-50", "white-50")
 ALIGNMENTS = ("left", "center", "right")
 
-DEFAULT_TEXTS = {
-    "basic": "",
-    "generated": "AI-generated",
-    "modified": "AI-modified",
-}
-
-# Used as the icon's alt text when there is no label text to use instead
-DEFAULT_ALT_TEXTS = {
-    "basic": "Made with AI",
+# What each icon says, used as its alt text. The generated and modified icons include their own wording, so
+# they need no text label by default.
+ALT_TEXTS = {
+    "basic": "AI",
     "generated": "AI-generated",
     "modified": "AI-modified",
 }
@@ -55,11 +50,11 @@ class ai_label(nodes.General, nodes.Element):  # noqa: N801 - docutils node nami
 
 def make_label(config: Config, kind: str, text: str | None, variant: str | None, inline: bool) -> ai_label:
     if text is None:
-        text = config.eu_ai_label_texts.get(kind, DEFAULT_TEXTS[kind])
+        text = config.eu_ai_label_texts.get(kind, "")
     return ai_label(
         kind=kind,
         text=text,
-        alt=text or DEFAULT_ALT_TEXTS[kind],
+        alt=ALT_TEXTS[kind],
         variant=variant or config.eu_ai_label_variant,
         inline=inline,
     )
@@ -107,7 +102,16 @@ class AILabelFallback(SphinxPostTransform):
     def run(self, **kwargs: Any) -> None:
         for node in list(self.document.findall(ai_label)):
             replacement_type = nodes.inline if node["inline"] else nodes.paragraph
-            node.replace_self(replacement_type("", node["alt"], classes=node["classes"]))
+            node.replace_self(replacement_type("", plain_text(node), classes=node["classes"]))
+
+
+def plain_text(node: ai_label) -> str:
+    """The label as text, in the same order as the HTML output."""
+    if not node["text"]:
+        return node["alt"]
+    if node["kind"] == "basic":
+        return f"{node['text']} {node['alt']}"
+    return node["text"]
 
 
 def visit_ai_label_html(self: HTML5Translator, node: ai_label) -> None:
@@ -161,7 +165,7 @@ def add_fallback(app: Sphinx) -> None:
 
 def setup(app: Sphinx) -> dict[str, Any]:
     app.add_config_value("eu_ai_label_variant", "auto", "env", types=frozenset({str}))
-    app.add_config_value("eu_ai_label_size", "1.5em", "html", types=frozenset({str}))
+    app.add_config_value("eu_ai_label_size", "2.5em", "html", types=frozenset({str}))
     app.add_config_value("eu_ai_label_texts", {}, "env", types=frozenset({dict}))
     app.connect("config-inited", check_config)
 

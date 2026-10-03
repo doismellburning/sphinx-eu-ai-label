@@ -37,7 +37,8 @@ def test_default_directive(app: SphinxTestApp) -> None:
         "eu-ai-label-block",
         "eu-ai-label-align-left",
     ]
-    assert one(label, ".eu-ai-label-text").get_text() == "AI-generated"
+    # The icon has its own wording, so there's no text label by default
+    assert label.select_one(".eu-ai-label-text") is None
     # Auto variant: black for light mode, white for dark mode
     assert icon_srcs(label) == [
         "_static/eu_ai_label/icons/generated-black.svg",
@@ -45,7 +46,7 @@ def test_default_directive(app: SphinxTestApp) -> None:
     ]
     for img in label.select("img"):
         assert img["alt"] == "AI-generated"
-        assert img["style"] == "height: 1.5em"
+        assert img["style"] == "height: 2.5em"
 
 
 @pytest.mark.sphinx("html", testroot="basic")
@@ -54,7 +55,7 @@ def test_directive_without_argument_is_basic(app: SphinxTestApp) -> None:
     label = labels(app)[1]
     assert "eu-ai-label-basic" in label["class"]
     assert label.select_one(".eu-ai-label-text") is None
-    assert {img["alt"] for img in label.select("img")} == {"Made with AI"}
+    assert {img["alt"] for img in label.select("img")} == {"AI"}
 
 
 @pytest.mark.sphinx("html", testroot="basic")
@@ -63,8 +64,9 @@ def test_directive_options(app: SphinxTestApp) -> None:
     label = labels(app)[2]
     assert label["class"][-3:] == ["eu-ai-label-align-right", "extra", "another"]
     assert icon_srcs(label) == ["_static/eu_ai_label/icons/basic-white.svg"]
-    assert one(label, "img")["alt"] == "Summary generated with"
-    # Basic icon comes after the text, so it reads "Summary generated with [AI]"
+    # Basic icon comes after the text, so it reads "Summary generated with AI"
+    assert one(label, ".eu-ai-label-text").get_text() == "Summary generated with"
+    assert one(label, "img")["alt"] == "AI"
     children = [child for child in label.children if isinstance(child, Tag)]
     assert [child.name for child in children] == ["span", "img"]
 
@@ -85,7 +87,8 @@ def test_role(app: SphinxTestApp) -> None:
     assert label.parent is not None
     assert label.parent.name == "p"
     assert "eu-ai-label-inline" in label["class"]
-    assert one(label, ".eu-ai-label-text").get_text() == "AI-generated"
+    assert label.select_one(".eu-ai-label-text") is None
+    assert {img["alt"] for img in label.select("img")} == {"AI-generated"}
 
 
 @pytest.mark.sphinx("html", testroot="basic")
@@ -117,7 +120,8 @@ def test_config(app: SphinxTestApp) -> None:
     assert one(label, ".eu-ai-label-text").get_text() == "Généré par IA"
     assert icon_srcs(label) == ["_static/eu_ai_label/icons/generated-black-50.svg"]
     img = one(label, "img")
-    assert img["alt"] == "Généré par IA"
+    # Alt text describes the icon, whatever the label says
+    assert img["alt"] == "AI-generated"
     assert img["style"] == "height: 2rem"
     # Explicit options still win over config
     assert icon_srcs(labels(app)[2]) == ["_static/eu_ai_label/icons/basic-white.svg"]
@@ -135,7 +139,7 @@ def test_myst(app: SphinxTestApp) -> None:
 def test_text_builder_fallback(app: SphinxTestApp) -> None:
     app.build()
     output = (Path(app.outdir) / "index.txt").read_text()
-    assert "AI-generated\n\nMade with AI\n\nSummary generated with\n\nAI-modified\n" in output
+    assert "AI-generated\n\nAI\n\nSummary generated with AI\n\nAI-modified\n" in output
     assert "This paragraph was AI-generated." in output
 
 
@@ -176,3 +180,9 @@ def test_icons_bundled_and_copied(app: SphinxTestApp) -> None:
             path = sphinx_eu_ai_label.icon_path(kind, variant)
             assert (sphinx_eu_ai_label.STATIC_DIR / path).is_file()
             assert (Path(app.outdir) / "_static" / path).is_file()
+
+
+@pytest.mark.sphinx("text", testroot="myst")
+def test_text_builder_fallback_uses_custom_text(app: SphinxTestApp) -> None:
+    app.build()
+    assert "Illustrations modified with AI" in (Path(app.outdir) / "index.txt").read_text()
