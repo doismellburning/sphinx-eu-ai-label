@@ -14,12 +14,12 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  UV_LOCKED: 1  # Ensure lockfile is up to date at test time
-
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    env:
+      UV_LOCKED: 1  # Ensure lockfile is up to date at test time
 
     steps:
       - uses: actions/checkout@v7
@@ -35,3 +35,32 @@ jobs:
           sudo apt-get install --yes --no-install-recommends \
             latexmk tex-gyre texlive-fonts-recommended texlive-latex-extra texlive-latex-recommended
       - run: make test
+
+  # Test against the oldest and newest supported Python and Sphinx, rather than just the locked versions
+  compat:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.14"]
+        sphinx: ["8.0", "latest"]
+        include:
+          - sphinx: "8.0"
+            uv-args: --with sphinx~=8.0.0
+          # Upgrades everything, so new releases of any dependency show up here first
+          - sphinx: "latest"
+            uv-args: --upgrade
+
+    name: compat (Python ${{ matrix.python }}, Sphinx ${{ matrix.sphinx }})
+
+    env:
+      UV_PYTHON: ${{ matrix.python }}
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - run: uv run ${{ matrix.uv-args }} python -c "import sphinx; print(sphinx.__version__)"
+      - run: uv run ${{ matrix.uv-args }} pytest
