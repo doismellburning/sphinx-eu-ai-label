@@ -102,7 +102,8 @@ These values go in `conf.py`:
 | Setting | Default | Description |
 | --- | --- | --- |
 | `eu_ai_label_variant` | `"auto"` | Default colour variant. `auto` uses `black` in light mode and `white` in dark mode, using `prefers-color-scheme` |
-| `eu_ai_label_size` | `"2.5em"` | Icon height, as any CSS length. The icons have wide margins built in, so the visible mark is smaller than this |
+| `eu_ai_label_size` | `"2.5em"` | Icon height for directive labels, as any CSS length. The icons have wide margins built in, so the visible mark is smaller than this |
+| `eu_ai_label_inline_size` | `"1.75em"` | Icon height for role labels. It's smaller so that labels in running text don't stretch the line as much |
 | `eu_ai_label_texts` | `{}` | Text to show next to each kind's icon, for example `{"generated": "Généré par IA"}` |
 
 `auto` follows the reader's operating system or browser setting. It does not follow a
@@ -128,7 +129,7 @@ these ways:
   reads as "Summary generated with AI".
 - Any label text is real HTML text, so screen readers can read it and it scales with
   the reader's font size.
-- The icon height is in `em` by default, so it scales with the text too.
+- The icon heights are in `em` by default, so they scale with the text too.
 
 ## Placement
 
