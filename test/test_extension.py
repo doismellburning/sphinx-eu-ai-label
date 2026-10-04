@@ -89,6 +89,8 @@ def test_role(app: SphinxTestApp) -> None:
     assert "eu-ai-label-inline" in label["class"]
     assert label.select_one(".eu-ai-label-text") is None
     assert {img["alt"] for img in label.select("img")} == {"AI-generated"}
+    # Smaller than block labels, so it doesn't stretch the line as much
+    assert {img["style"] for img in label.select("img")} == {"height: 1.75em"}
 
 
 @pytest.mark.sphinx("html", testroot="basic")
@@ -111,6 +113,7 @@ def test_static_files(app: SphinxTestApp) -> None:
     confoverrides={
         "eu_ai_label_variant": "black-50",
         "eu_ai_label_size": "2rem",
+        "eu_ai_label_inline_size": "1.2rem",
         "eu_ai_label_texts": {"generated": "Généré par IA"},
     },
 )
@@ -123,6 +126,7 @@ def test_config(app: SphinxTestApp) -> None:
     # Alt text describes the icon, whatever the label says
     assert img["alt"] == "AI-generated"
     assert img["style"] == "height: 2rem"
+    assert {img["style"] for img in labels(app)[4].select("img")} == {"height: 1.2rem"}
     # Explicit options still win over config
     assert icon_srcs(labels(app)[2]) == ["_static/eu_ai_label/icons/basic-white.svg"]
 

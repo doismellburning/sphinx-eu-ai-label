@@ -133,7 +133,7 @@ def plain_text(node: ai_label) -> str:
 def visit_ai_label_html(self: HTML5Translator, node: ai_label) -> None:
     builder = self.builder
     page_uri = builder.get_target_uri(builder.current_docname)
-    size = builder.config.eu_ai_label_size
+    size = builder.config.eu_ai_label_inline_size if node["inline"] else builder.config.eu_ai_label_size
 
     def img(variant: str, extra_class: str = "") -> str:
         src = relative_uri(page_uri, f"_static/{icon_path(node['kind'], variant)}")
@@ -183,6 +183,7 @@ def add_fallback(app: Sphinx) -> None:
 def setup(app: Sphinx) -> dict[str, Any]:
     app.add_config_value("eu_ai_label_variant", "auto", "env", types=frozenset({str}))
     app.add_config_value("eu_ai_label_size", "2.5em", "html", types=frozenset({str}))
+    app.add_config_value("eu_ai_label_inline_size", "1.75em", "html", types=frozenset({str}))
     app.add_config_value("eu_ai_label_texts", {}, "env", types=frozenset({dict}))
     app.connect("config-inited", check_config)
 
