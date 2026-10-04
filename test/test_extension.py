@@ -234,6 +234,14 @@ def test_myst_role(app: SphinxTestApp) -> None:
     assert icon_srcs(label) == ["_static/eu_ai_label/icons/basic-white.svg"]
 
 
+def test_auto_variant_shows_one_icon_without_css(app: SphinxTestApp) -> None:
+    app.build()
+    light, dark = labels(app)[0].select("img")
+    # Browsers hide [hidden] natively, so without the stylesheet only the black icon shows
+    assert not light.has_attr("hidden")
+    assert dark.has_attr("hidden")
+
+
 @pytest.mark.parametrize("theme", ["light", "dark"])
 def test_stylesheet_follows_theme_switches(theme: str) -> None:
     # Furo sets data-theme on <body>, PyData and Book on <html>; an attribute selector matches either
