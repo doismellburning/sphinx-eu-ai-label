@@ -93,7 +93,20 @@ Use the role to put a label inline:
 This paragraph was :ai-label:`generated`.
 ```
 
-The role takes only the kind. It uses the default variant and `eu_ai_label_texts`.
+Add a variant after the kind, and put text before it in angle brackets, as with links:
+
+```rst
+This summary was :ai-label:`generated white`.
+
+:ai-label:`Paragraph written with <basic>`
+
+:ai-label:`Illustrations modified with AI <modified black-50>`
+```
+
+Text goes in the same place as with the directive. Without text, the role uses
+`eu_ai_label_texts`, and without a variant it uses `eu_ai_label_variant`.
+
+In MyST Markdown, use `` {ai-label}`Paragraph written with <basic>` ``.
 
 ## Configuration
 

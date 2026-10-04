@@ -18,3 +18,9 @@ This sentence was {ai-label}`generated`.
 ```markdown
 This sentence was {ai-label}`generated`.
 ```
+
+{ai-label}`This paragraph was written with <basic black-50>`
+
+```markdown
+{ai-label}`This paragraph was written with <basic black-50>`
+```

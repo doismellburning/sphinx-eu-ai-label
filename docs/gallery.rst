@@ -134,10 +134,18 @@ Alignment
 Inline role
 -----------
 
-The role puts a label in running text. It takes only the kind.
+The role puts a label in running text.
 
 This sentence was :ai-label:`generated`.
 
 .. code-block:: rst
 
    This sentence was :ai-label:`generated`.
+
+Add a variant after the kind, and put text before it in angle brackets, as with links.
+
+:ai-label:`This paragraph was written with <basic black-50>`
+
+.. code-block:: rst
+
+   :ai-label:`This paragraph was written with <basic black-50>`
