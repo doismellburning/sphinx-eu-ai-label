@@ -26,6 +26,11 @@ These values go in ``conf.py``.
      - ``{}``
      - Text to show next to each kind's icon, for example
        ``{"generated": "Généré par IA"}``. The directive's ``:text:`` option overrides it.
+   * - ``eu_ai_label_page``
+     - ``None``
+     - A label for the top of every page, such as ``"generated"`` or ``"modified white"``.
+       A page can set its own with ``:ai-label:`` metadata, or opt out with
+       ``:ai-label: none``.
 
 ``auto`` follows the reader's operating system or browser setting. It also follows a
 theme's own light/dark switch if the theme sets a ``data-theme="light"`` or
