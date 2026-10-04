@@ -1,3 +1,6 @@
+import os
+import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -429,3 +432,35 @@ def test_latex_config_and_text_after_icon(app: SphinxTestApp) -> None:
     app.build()
     tex = next(Path(app.outdir).glob("*.tex")).read_text()
     assert latex_icon("eu_ai_label/icons/modified-black-50", "1cm") + "~Illustrations modified with AI" in tex
+
+
+@pytest.mark.sphinx("latex", testroot="basic", srcdir="basic-latexpdf")
+def test_latex_compiles_to_pdf(app: SphinxTestApp) -> None:
+    if shutil.which("latexmk") is None:
+        # CI installs TeX Live, so this only skips locally
+        if os.environ.get("CI"):
+            pytest.fail("latexmk is needed to test PDF output")
+        pytest.skip("latexmk isn't installed")
+    app.build()
+    outdir = Path(app.outdir)
+    # What sphinx-build -M latexpdf runs
+    subprocess.run(
+        ["make", "all-pdf", "LATEXOPTS=-halt-on-error", "LATEXMKOPTS=-silent"],
+        cwd=outdir,
+        stdin=subprocess.DEVNULL,
+        capture_output=True,
+        check=True,
+        timeout=300,
+    )
+    assert next(outdir.glob("*.pdf")).stat().st_size > 0
+    # pdfTeX wraps its log at 79 characters, including in the middle of file names
+    log = next(outdir.glob("*.log")).read_text(errors="replace").replace("\n", "")
+    for icon in [
+        "generated-black",
+        "generated-white",
+        "basic-black",
+        "basic-white",
+        "modified-black",
+        "modified-black-50",
+    ]:
+        assert f"eu_ai_label/icons/{icon}.pdf" in log
