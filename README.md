@@ -161,6 +161,8 @@ These values go in `conf.py`:
 | `eu_ai_label_inline_size` | `"1.75em"` | Icon height for role labels. It's smaller so that labels in running text don't stretch the line as much |
 | `eu_ai_label_texts` | `{}` | Text to show next to each kind's icon, for example `{"generated": "Généré par IA"}` |
 | `eu_ai_label_page` | `None` | A label for every page, such as `"generated"` or `"modified white"`. See [Page labels](#page-labels) |
+| `eu_ai_label_latex_size` | `"2.5em"` | Icon height for directive labels in LaTeX output, as a LaTeX length |
+| `eu_ai_label_latex_inline_size` | `"1.75em"` | Icon height for role labels in LaTeX output, as a LaTeX length |
 
 `auto` follows the reader's operating system or browser setting. It also follows a
 theme's own light/dark switch if the theme sets a `data-theme="light"` or
@@ -173,9 +175,12 @@ Labels have the CSS classes `eu-ai-label`, `eu-ai-label-{kind}`, and either
 
 ## Other output formats
 
-The icons appear only in HTML output (including EPUB). Other builders, such as LaTeX,
-man and plain text, show the label as text instead: the label text if you set any,
-including its markup (with "AI" after it for `basic`), otherwise what the icon says.
+The icons appear in HTML output (including EPUB) and LaTeX/PDF output. LaTeX uses the
+`black` variant for `auto`, since print has no dark mode, and ignores `:class:`.
+
+Other builders, such as man and plain text, show the label as text instead: the label
+text if you set any, including its markup (with "AI" after it for `basic`), otherwise
+what the icon says.
 
 ## Translation
 
@@ -209,7 +214,8 @@ In practice, put the directive at the top of the page or section it applies to, 
 This project's code is under the MIT licence. See [`LICENSE`](LICENSE).
 The icons are published by the European Commission, which says they are "made publicly
 available for everyone to use freely, without the need for attribution". This package
-includes the SVG files unmodified, apart from their file names.
+includes the SVG files unmodified, apart from their file names, and PDF conversions of
+them for LaTeX output.
 
 ## Development
 
@@ -219,4 +225,5 @@ make check      # Format check, lint and type check
 make test       # Tests, with a 100% coverage requirement
 make fix        # Auto-format and apply lint fixes
 make docs       # Build the showcase site into docs/_build/html
+make icons      # Regenerate the PDF icons for LaTeX from the SVGs
 ```

@@ -191,6 +191,9 @@ def test_icons_bundled_and_copied(app: SphinxTestApp) -> None:
             path = sphinx_eu_ai_label.icon_path(kind, variant)
             assert (sphinx_eu_ai_label.STATIC_DIR / path).is_file()
             assert (Path(app.outdir) / "_static" / path).is_file()
+            assert (sphinx_eu_ai_label.LATEX_ICONS_DIR / f"{kind}-{variant}.pdf").is_file()
+    # The PDFs are only for LaTeX
+    assert not list((Path(app.outdir) / "_static").rglob("*.pdf"))
 
 
 @pytest.mark.sphinx("text", testroot="myst")
@@ -379,3 +382,50 @@ def test_text_markup_translated(app: SphinxTestApp) -> None:
     text = one(labels(app)[1], ".eu-ai-label-text")
     assert text.get_text() == "Voir notre politique"
     assert one(text, "a")["href"] == "https://example.com/politique"
+
+
+def latex_icon(path: str, size: str) -> str:
+    return rf"\raisebox{{\dimexpr 0.5ex - 0.5\height\relax}}{{\sphinxincludegraphics[height={size}]{{{{{path}}}.pdf}}}}"
+
+
+# LaTeX needs its own srcdir, as its environment is incompatible with the HTML builds' doctrees
+@pytest.mark.sphinx("latex", testroot="basic", srcdir="basic-latex")
+def test_latex(app: SphinxTestApp) -> None:
+    app.build()
+    tex = next(Path(app.outdir).glob("*.tex")).read_text()
+    # Auto variant is black, as print has no dark mode
+    assert (
+        "\\begin{flushleft}\n" + latex_icon("eu_ai_label/icons/generated-black", "2.5em") + "\n\\end{flushleft}" in tex
+    )
+    # Basic icon comes after the text, as in HTML
+    assert (
+        "\\begin{flushright}\nSummary generated with~"
+        + latex_icon("eu_ai_label/icons/basic-white", "2.5em")
+        + "\n\\end{flushright}"
+    ) in tex
+    assert "This paragraph was " + latex_icon("eu_ai_label/icons/generated-black", "1.75em") + "." in tex
+    assert (Path(app.outdir) / "eu_ai_label" / "icons" / "generated-black.pdf").is_file()
+    # Text markup is written as LaTeX
+    assert (
+        r"Summary written \sphinxstyleemphasis{carefully} with \sphinxhref{https://example.com/policy}{help} from~"
+        + latex_icon("eu_ai_label/icons/basic-black", "2.5em")
+    ) in tex
+    # A named label is a cross-reference target, and an explicit target before it isn't written twice
+    assert (
+        "\\phantomsection\\label{\\detokenize{sub/page:summary-label}}\n\\begin{flushleft}\n"
+        "\\phantomsection\\label{\\detokenize{sub/page:named-label}}"
+        + latex_icon("eu_ai_label/icons/generated-black", "2.5em")
+    ) in tex
+    assert tex.count("\\label{\\detokenize{sub/page:summary-label}}") == 1
+
+
+@pytest.mark.sphinx(
+    "latex",
+    testroot="myst",
+    srcdir="myst-latex",
+    confoverrides={"eu_ai_label_latex_size": "1cm", "eu_ai_label_variant": "black-50"},
+)
+def test_latex_config_and_text_after_icon(app: SphinxTestApp) -> None:
+    app.build()
+    tex = next(Path(app.outdir).glob("*.tex")).read_text()
+    assert latex_icon("eu_ai_label/icons/modified-black-50", "1cm") + "~Illustrations modified with AI" in tex
