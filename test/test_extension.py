@@ -264,3 +264,15 @@ def test_text_translated(app: SphinxTestApp) -> None:
     assert one(label, ".eu-ai-label-text").get_text() == "Résumé généré avec"
     # Alt text describes the icon, so isn't translated
     assert one(label, "img")["alt"] == "AI"
+
+
+@pytest.mark.sphinx("html", testroot="basic")
+def test_directive_name(app: SphinxTestApp) -> None:
+    app.build()
+    page = soup(app, "sub/page")
+    label = labels(app, "sub/page")[1]
+    assert label["id"] == "named-label"
+    # A label with an explicit target as well gets both IDs
+    assert [span["id"] for span in label.select("span[id]")] == ["summary-label"]
+    hrefs = [link["href"] for link in page.select("a.reference.internal")]
+    assert hrefs == ["#named-label", "#summary-label"]
