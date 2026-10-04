@@ -267,9 +267,21 @@ def test_text_translated(app: SphinxTestApp) -> None:
 
 
 @pytest.mark.sphinx("html", testroot="basic")
+def test_directive_name(app: SphinxTestApp) -> None:
+    app.build()
+    page = soup(app, "sub/page")
+    label = labels(app, "sub/page")[1]
+    assert label["id"] == "named-label"
+    # A label with an explicit target as well gets both IDs
+    assert [span["id"] for span in label.select("span[id]")] == ["summary-label"]
+    hrefs = [link["href"] for link in page.select("a.reference.internal")]
+    assert hrefs == ["#named-label", "#summary-label"]
+
+
+@pytest.mark.sphinx("html", testroot="basic")
 def test_directive_text_markup(app: SphinxTestApp) -> None:
     app.build()
-    label = labels(app, "sub/page")[1]
+    label = labels(app, "sub/page")[2]
     text = one(label, ".eu-ai-label-text")
     assert text.get_text() == "Summary written carefully with help from"
     assert one(text, "em").get_text() == "carefully"
