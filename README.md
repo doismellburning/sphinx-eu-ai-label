@@ -108,6 +108,39 @@ Text goes in the same place as with the directive. Without text, the role uses
 
 In MyST Markdown, use `` {ai-label}`Paragraph written with <basic>` ``.
 
+### Page labels
+
+To label a whole page, set `ai-label` in the page's metadata. The label goes at the top
+of the page, under its title. The value is a kind, optionally followed by a variant, as
+with the role.
+
+```rst
+:ai-label: generated
+
+My page
+=======
+```
+
+In MyST Markdown, use front matter:
+
+```markdown
+---
+ai-label: modified white
+---
+
+# My page
+```
+
+To label every page, set `eu_ai_label_page`. A page can still set its own label, or opt
+out with `:ai-label: none`.
+
+```python
+eu_ai_label_page = "generated"
+```
+
+Page labels use the text from `eu_ai_label_texts`, if any. For other text, or to put a
+label somewhere else on the page, use the directive.
+
 ## Configuration
 
 These values go in `conf.py`:
@@ -118,6 +151,7 @@ These values go in `conf.py`:
 | `eu_ai_label_size` | `"2.5em"` | Icon height for directive labels, as any CSS length. The icons have wide margins built in, so the visible mark is smaller than this |
 | `eu_ai_label_inline_size` | `"1.75em"` | Icon height for role labels. It's smaller so that labels in running text don't stretch the line as much |
 | `eu_ai_label_texts` | `{}` | Text to show next to each kind's icon, for example `{"generated": "Généré par IA"}` |
+| `eu_ai_label_page` | `None` | A label for every page, such as `"generated"` or `"modified white"`. See [Page labels](#page-labels) |
 
 `auto` follows the reader's operating system or browser setting. It also follows a
 theme's own light/dark switch if the theme sets a `data-theme="light"` or
@@ -157,8 +191,8 @@ these ways:
 
 The Commission's guidance says a label should be visible no later than the moment a
 reader first sees the content. It should also not be covered by other page elements.
-In practice, put the directive at the top of the page or section it applies to. For
-the full placement specifications, see Section 2 of the
+In practice, put the directive at the top of the page or section it applies to, or use
+[page labels](#page-labels). For the full placement specifications, see Section 2 of the
 [Code of Practice](https://digital-strategy.ec.europa.eu/en/policies/code-practice-ai-generated-content).
 
 ## Licence

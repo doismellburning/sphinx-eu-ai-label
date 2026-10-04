@@ -12,6 +12,7 @@ from docutils.parsers.rst import directives
 from sphinx import addnodes
 from sphinx.errors import ConfigError
 from sphinx.transforms.post_transforms import SphinxPostTransform
+from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective, SphinxRole
 from sphinx.util.nodes import split_explicit_title
 from sphinx.util.osutil import relative_uri
@@ -24,6 +25,8 @@ if TYPE_CHECKING:
 
 __version__ = version("sphinx-eu-ai-label")
 
+logger = logging.getLogger(__name__)
+
 KINDS = ("basic", "generated", "modified")
 VARIANTS = ("auto", "black", "white", "black-50", "white-50")
 ALIGNMENTS = ("left", "center", "right")
@@ -35,6 +38,10 @@ ALT_TEXTS = {
     "generated": "AI-generated",
     "modified": "AI-modified",
 }
+
+# Page metadata field that labels a page, and the value that opts a page out of eu_ai_label_page
+PAGE_FIELD = "ai-label"
+NO_PAGE_LABEL = "none"
 
 STATIC_DIR = Path(__file__).parent / "_static"
 STATIC_PREFIX = "eu_ai_label"
@@ -61,6 +68,19 @@ class ai_label(nodes.General, nodes.Element, addnodes.translatable):  # noqa: N8
 
     def extract_original_messages(self) -> list[str]:
         return [self["rawtext"]] if self.get("rawtext") else []
+
+
+def parse_spec(spec: str) -> tuple[str, str | None]:
+    """Parse ``kind [variant]``, as used by the role and page labels."""
+    kind, *rest = spec.split() or [""]
+    if kind not in KINDS:
+        raise ValueError(f"Unknown AI label kind {kind!r}; expected one of {', '.join(KINDS)}")
+    if len(rest) > 1:
+        raise ValueError(f"Expected an AI label kind and optional variant, not {spec!r}")
+    variant = rest[0] if rest else None
+    if variant is not None and variant not in VARIANTS:
+        raise ValueError(f"Unknown AI label variant {variant!r}; expected one of {', '.join(VARIANTS)}")
+    return kind, variant
 
 
 def make_label(config: Config, kind: str, text: str | None, variant: str | None, inline: bool) -> ai_label:
@@ -103,14 +123,10 @@ class AILabelRole(SphinxRole):
 
     def run(self) -> tuple[list[nodes.Node], list[nodes.system_message]]:
         has_text, text, spec = split_explicit_title(self.text)
-        kind, *rest = spec.split() or [""]
-        if kind not in KINDS:
-            return self.problem(f"Unknown AI label kind {kind!r}; expected one of {', '.join(KINDS)}")
-        if len(rest) > 1:
-            return self.problem(f"Expected an AI label kind and optional variant, not {spec!r}")
-        variant = rest[0] if rest else None
-        if variant is not None and variant not in VARIANTS:
-            return self.problem(f"Unknown AI label variant {variant!r}; expected one of {', '.join(VARIANTS)}")
+        try:
+            kind, variant = parse_spec(spec)
+        except ValueError as error:
+            return self.problem(str(error))
         node = make_label(self.config, kind, text if has_text else None, variant, inline=True)
         self.set_source_info(node)
         return [node], []
@@ -177,6 +193,28 @@ def visit_ai_label_html(self: HTML5Translator, node: ai_label) -> None:
     raise nodes.SkipNode
 
 
+def add_page_label(app: Sphinx, doctree: nodes.document) -> None:
+    """Label the page from its metadata, or from ``eu_ai_label_page``, at the top of the page."""
+    env = app.env
+    spec = str(env.metadata[env.docname].get(PAGE_FIELD, app.config.eu_ai_label_page) or "")
+    if not spec or spec == NO_PAGE_LABEL:
+        return
+    try:
+        kind, variant = parse_spec(spec)
+    except ValueError as error:
+        logger.warning(f"{error} in the page's {PAGE_FIELD!r} metadata", location=env.docname)
+        return
+    label = make_label(app.config, kind, None, variant, inline=False)
+    label["align"] = "left"
+
+    # Under the page's title if it starts with one, so the label is visible as soon as the content is
+    first = next((child for child in doctree.children if not isinstance(child, nodes.Invisible)), None)
+    if isinstance(first, nodes.section) and first.children and isinstance(first[0], nodes.title):
+        first.insert(1, label)
+    else:
+        doctree.insert(doctree.index(first) if first is not None else len(doctree.children), label)
+
+
 def check_config(app: Sphinx, config: Config) -> None:
     if config.eu_ai_label_variant not in VARIANTS:
         raise ConfigError(
@@ -184,6 +222,11 @@ def check_config(app: Sphinx, config: Config) -> None:
         )
     if unknown := set(config.eu_ai_label_texts) - set(KINDS):
         raise ConfigError(f"eu_ai_label_texts has unknown kinds: {', '.join(sorted(unknown))}")
+    if config.eu_ai_label_page is not None:
+        try:
+            parse_spec(config.eu_ai_label_page)
+        except ValueError as error:
+            raise ConfigError(f"eu_ai_label_page: {error}") from None
     config.html_static_path.append(str(STATIC_DIR))
 
 
@@ -198,12 +241,15 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.add_config_value("eu_ai_label_size", "2.5em", "html", types=frozenset({str}))
     app.add_config_value("eu_ai_label_inline_size", "1.75em", "html", types=frozenset({str}))
     app.add_config_value("eu_ai_label_texts", {}, "env", types=frozenset({dict}))
+    app.add_config_value("eu_ai_label_page", None, "env", types=frozenset({str, type(None)}))
     app.connect("config-inited", check_config)
 
     app.add_node(ai_label, html=(visit_ai_label_html, None))
     app.add_directive("ai-label", AILabelDirective)
     app.add_role("ai-label", AILabelRole())
     app.connect("builder-inited", add_fallback)
+    # After Sphinx's metadata collector, which runs at the default priority
+    app.connect("doctree-read", add_page_label, priority=600)
     app.add_css_file(CSS_FILE)
 
     return {
