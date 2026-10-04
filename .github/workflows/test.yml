@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  matrix:
     runs-on: ubuntu-latest
 
     # Test the oldest and newest supported Python, each with the locked dependencies, the oldest supported Sphinx,
@@ -52,3 +52,12 @@ jobs:
           sudo apt-get install --yes --no-install-recommends \
             latexmk tex-gyre texlive-fonts-recommended texlive-latex-extra texlive-latex-recommended
       - run: make test
+
+  # A single check for branch protection to require, which passes only if every matrix job does
+  test:
+    if: always()
+    needs: matrix
+    runs-on: ubuntu-latest
+
+    steps:
+      - run: test "${{ needs.matrix.result }}" = success
