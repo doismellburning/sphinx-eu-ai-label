@@ -186,3 +186,19 @@ def test_icons_bundled_and_copied(app: SphinxTestApp) -> None:
 def test_text_builder_fallback_uses_custom_text(app: SphinxTestApp) -> None:
     app.build()
     assert "Illustrations modified with AI" in (Path(app.outdir) / "index.txt").read_text()
+
+
+# gettext needs its own srcdir, as its environment is incompatible with the HTML builds' doctrees
+@pytest.mark.sphinx("gettext", testroot="basic", srcdir="basic-gettext")
+def test_text_extracted_for_translation(app: SphinxTestApp) -> None:
+    app.build()
+    assert 'msgid "Summary generated with"' in (Path(app.outdir) / "index.pot").read_text()
+
+
+@pytest.mark.sphinx("html", testroot="i18n")
+def test_text_translated(app: SphinxTestApp) -> None:
+    app.build()
+    label = labels(app)[0]
+    assert one(label, ".eu-ai-label-text").get_text() == "Résumé généré avec"
+    # Alt text describes the icon, so isn't translated
+    assert one(label, "img")["alt"] == "AI"
