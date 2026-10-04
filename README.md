@@ -69,6 +69,13 @@ with [AI]". For the other icons, the text goes after the icon.
    :align: right
 ```
 
+The text can contain inline markup, such as a link to a page about how you use AI:
+
+```rst
+.. ai-label:: basic
+   :text: Summary generated with `help <ai-policy.html>`_ from
+```
+
 MyST Markdown:
 
 ````markdown
@@ -80,7 +87,7 @@ MyST Markdown:
 | Option | Values | Default |
 | --- | --- | --- |
 | *(argument)* | `basic`, `generated`, `modified` | `basic` |
-| `:text:` | Text to show next to the icon. Pass an empty value to show the icon on its own, even if `eu_ai_label_texts` sets text | `eu_ai_label_texts`, or none |
+| `:text:` | Text to show next to the icon. It can contain inline markup, such as a link to your AI policy. Pass an empty value to show the icon on its own, even if `eu_ai_label_texts` sets text | `eu_ai_label_texts`, or none |
 | `:variant:` | `auto`, `black`, `white`, `black-50`, `white-50` | `eu_ai_label_variant` |
 | `:align:` | `left`, `center`, `right` | `left` |
 | `:class:` | Extra CSS classes | |
@@ -104,8 +111,9 @@ This summary was :ai-label:`generated white`.
 :ai-label:`Illustrations modified with AI <modified black-50>`
 ```
 
-Text goes in the same place as with the directive. Without text, the role uses
-`eu_ai_label_texts`, and without a variant it uses `eu_ai_label_variant`.
+Text goes in the same place as with the directive, but it can't contain markup.
+Without text, the role uses `eu_ai_label_texts`, and without a variant it uses
+`eu_ai_label_variant`.
 
 In MyST Markdown, use `` {ai-label}`Paragraph written with <basic>` ``.
 
@@ -166,15 +174,15 @@ Labels have the CSS classes `eu-ai-label`, `eu-ai-label-{kind}`, and either
 ## Other output formats
 
 The icons appear only in HTML output (including EPUB). Other builders, such as LaTeX,
-man and plain text, show the label as text instead: the label text if you set any
-(with "AI" after it for `basic`), otherwise what the icon says.
+man and plain text, show the label as text instead: the label text if you set any,
+including its markup (with "AI" after it for `basic`), otherwise what the icon says.
 
 ## Translation
 
 Text from the directive's `:text:` option is included in the gettext catalogues, so you
-can translate it like any other text. Text from `eu_ai_label_texts` isn't, because you
-can set that per language in `conf.py`. The alt text always says what the icon says, so
-it isn't translated either.
+can translate it like any other text, markup included. Text from `eu_ai_label_texts`
+isn't, because you can set that per language in `conf.py`. The alt text always says
+what the icon says, so it isn't translated either.
 
 ## Accessibility
 

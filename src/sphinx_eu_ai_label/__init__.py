@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any
 
 from docutils import nodes
 from docutils.parsers.rst import directives
-from sphinx import addnodes
 from sphinx.errors import ConfigError
 from sphinx.transforms.post_transforms import SphinxPostTransform
 from sphinx.util import logging
@@ -53,21 +52,21 @@ def icon_path(kind: str, variant: str) -> str:
     return f"{STATIC_PREFIX}/icons/{kind}-{variant}.svg"
 
 
-class ai_label(nodes.General, nodes.Element, addnodes.translatable):  # noqa: N801 - docutils node naming convention
+class ai_label(nodes.General, nodes.Element):  # noqa: N801 - docutils node naming convention
     """A label, either block-level (from the directive) or inline (from the role).
 
-    Text given in the directive's ``:text:`` option is kept in ``rawtext`` so it can be translated. Text from config
-    isn't, as it's set per language in ``conf.py``.
+    Its text, if any, is an ``ai_label_text`` child.
     """
 
-    def preserve_original_messages(self) -> None:
-        pass  # The directive stores rawtext when it creates the node
 
-    def apply_translated_message(self, original_message: str, translated_message: str) -> None:
-        self["text"] = translated_message  # A label has at most one message, so it must be this one
+class ai_label_text(nodes.Inline, nodes.TextElement):  # noqa: N801 - docutils node naming convention
+    """A label's text.
 
-    def extract_original_messages(self) -> list[str]:
-        return [self["rawtext"]] if self.get("rawtext") else []
+    Text from the directive's ``:text:`` option is marked translatable, so Sphinx extracts and translates it like
+    any paragraph, markup included. Text from config isn't, as it's set per language in ``conf.py``.
+
+    This isn't a ``nodes.inline``, because Sphinx unwraps translatable ``inline`` nodes after translating them.
+    """
 
 
 def parse_spec(spec: str) -> tuple[str, str | None]:
@@ -84,15 +83,17 @@ def parse_spec(spec: str) -> tuple[str, str | None]:
 
 
 def make_label(config: Config, kind: str, text: str | None, variant: str | None, inline: bool) -> ai_label:
-    if text is None:
-        text = config.eu_ai_label_texts.get(kind, "")
-    return ai_label(
+    node = ai_label(
         kind=kind,
-        text=text,
         alt=ALT_TEXTS[kind],
         variant=variant or config.eu_ai_label_variant,
         inline=inline,
     )
+    if text is None:
+        text = config.eu_ai_label_texts.get(kind, "")
+    if text:
+        node += ai_label_text(text, text)
+    return node
 
 
 class AILabelDirective(SphinxDirective):
@@ -110,9 +111,13 @@ class AILabelDirective(SphinxDirective):
         kind = self.arguments[0] if self.arguments else "basic"
         if kind not in KINDS:
             raise self.error(f"Unknown AI label kind {kind!r}; expected one of {', '.join(KINDS)}")
-        node = make_label(self.config, kind, self.options.get("text"), self.options.get("variant"), inline=False)
-        if "text" in self.options:
-            node["rawtext"] = self.options["text"]
+        text = self.options.get("text")
+        # Text from the option is added below rather than by make_label, so it can contain markup such as links
+        node = make_label(self.config, kind, None if text is None else "", self.options.get("variant"), inline=False)
+        if text:
+            text_node = ai_label_text(text, "", *self.parse_inline(text, lineno=self.lineno)[0], translatable=True)
+            self.set_source_info(text_node)
+            node += text_node
         node["align"] = self.options.get("align", "left")
         node["classes"] += self.options.get("class", [])
         self.add_name(node)
@@ -146,19 +151,20 @@ class AILabelFallback(SphinxPostTransform):
     def run(self, **kwargs: Any) -> None:
         for node in list(self.document.findall(ai_label)):
             replacement_type = nodes.inline if node["inline"] else nodes.paragraph
-            node.replace_self(replacement_type("", plain_text(node), classes=node["classes"]))
+            node.replace_self(replacement_type("", "", *fallback_content(node), classes=node["classes"]))
 
 
-def plain_text(node: ai_label) -> str:
-    """The label as text, in the same order as the HTML output."""
-    if not node["text"]:
-        return node["alt"]
+def fallback_content(node: ai_label) -> list[nodes.Node]:
+    """The label without its icons, in the same order as the HTML output."""
+    if not node.children:
+        return [nodes.Text(node["alt"])]
+    text = node.children[0].children
     if node["kind"] == "basic":
-        return f"{node['text']} {node['alt']}"
-    return node["text"]
+        return [*text, nodes.Text(f" {node['alt']}")]
+    return list(text)
 
 
-def visit_ai_label_html(self: HTML5Translator, node: ai_label) -> None:
+def label_icons_html(self: HTML5Translator, node: ai_label) -> str:
     builder = self.builder
     page_uri = builder.get_target_uri(builder.current_docname)
     size = builder.config.eu_ai_label_inline_size if node["inline"] else builder.config.eu_ai_label_size
@@ -174,28 +180,43 @@ def visit_ai_label_html(self: HTML5Translator, node: ai_label) -> None:
 
     if node["variant"] == "auto":
         # The dark icon is hidden so only one shows without the stylesheet, which overrides this in dark mode
-        icons = img("black", "eu-ai-label-icon-light") + img("white", "eu-ai-label-icon-dark", hidden=True)
-    else:
-        icons = img(node["variant"])
+        return img("black", "eu-ai-label-icon-light") + img("white", "eu-ai-label-icon-dark", hidden=True)
+    return img(node["variant"])
 
-    text = f'<span class="eu-ai-label-text">{escape(node["text"])}</span>' if node["text"] else ""
-    # The basic icon completes custom text such as "Summary generated with", so it goes last
-    content = text + icons if node["kind"] == "basic" else icons + text
 
+def label_tag(node: ai_label) -> str:
+    return "span" if node["inline"] else "div"
+
+
+def visit_ai_label_html(self: HTML5Translator, node: ai_label) -> None:
     classes = ["eu-ai-label", f"eu-ai-label-{node['kind']}"]
     if node["inline"]:
-        tag = "span"
         classes.append("eu-ai-label-inline")
     else:
-        tag = "div"
         classes += ["eu-ai-label-block", f"eu-ai-label-align-{node['align']}"]
     classes += node["classes"]
 
     # Only the first ID goes on the element, so cross-references to any others get empty spans as their targets
     id_attr = f' id="{escape(node["ids"][0])}"' if node["ids"] else ""
     extra_ids = "".join(f'<span id="{escape(id_)}"></span>' for id_ in node["ids"][1:])
-    self.body.append(f'<{tag}{id_attr} class="{escape(" ".join(classes))}">{extra_ids}{content}</{tag}>')
-    raise nodes.SkipNode
+    self.body.append(f'<{label_tag(node)}{id_attr} class="{escape(" ".join(classes))}">{extra_ids}')
+    # The basic icon completes custom text such as "Summary generated with", so it goes last
+    if node["kind"] != "basic":
+        self.body.append(label_icons_html(self, node))
+
+
+def depart_ai_label_html(self: HTML5Translator, node: ai_label) -> None:
+    if node["kind"] == "basic":
+        self.body.append(label_icons_html(self, node))
+    self.body.append(f"</{label_tag(node)}>")
+
+
+def visit_ai_label_text_html(self: HTML5Translator, node: ai_label_text) -> None:
+    self.body.append('<span class="eu-ai-label-text">')
+
+
+def depart_ai_label_text_html(self: HTML5Translator, node: ai_label_text) -> None:
+    self.body.append("</span>")
 
 
 def add_page_label(app: Sphinx, doctree: nodes.document) -> None:
@@ -249,7 +270,8 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.add_config_value("eu_ai_label_page", None, "env", types=frozenset({str, type(None)}))
     app.connect("config-inited", check_config)
 
-    app.add_node(ai_label, html=(visit_ai_label_html, None))
+    app.add_node(ai_label, html=(visit_ai_label_html, depart_ai_label_html))
+    app.add_node(ai_label_text, html=(visit_ai_label_text_html, depart_ai_label_text_html))
     app.add_directive("ai-label", AILabelDirective)
     app.add_role("ai-label", AILabelRole())
     app.connect("builder-inited", add_fallback)
