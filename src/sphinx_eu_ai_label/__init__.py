@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 
 from docutils import nodes
 from docutils.parsers.rst import directives
+from sphinx import addnodes
 from sphinx.errors import ConfigError
 from sphinx.transforms.post_transforms import SphinxPostTransform
 from sphinx.util.docutils import SphinxDirective, SphinxRole
@@ -45,8 +46,21 @@ def icon_path(kind: str, variant: str) -> str:
     return f"{STATIC_PREFIX}/icons/{kind}-{variant}.svg"
 
 
-class ai_label(nodes.General, nodes.Element):  # noqa: N801 - docutils node naming convention
-    """A label, either block-level (from the directive) or inline (from the role)."""
+class ai_label(nodes.General, nodes.Element, addnodes.translatable):  # noqa: N801 - docutils node naming convention
+    """A label, either block-level (from the directive) or inline (from the role).
+
+    Text given in the directive's ``:text:`` option is kept in ``rawtext`` so it can be translated. Text from config
+    isn't, as it's set per language in ``conf.py``.
+    """
+
+    def preserve_original_messages(self) -> None:
+        pass  # The directive stores rawtext when it creates the node
+
+    def apply_translated_message(self, original_message: str, translated_message: str) -> None:
+        self["text"] = translated_message  # A label has at most one message, so it must be this one
+
+    def extract_original_messages(self) -> list[str]:
+        return [self["rawtext"]] if self.get("rawtext") else []
 
 
 def make_label(config: Config, kind: str, text: str | None, variant: str | None, inline: bool) -> ai_label:
@@ -76,6 +90,8 @@ class AILabelDirective(SphinxDirective):
         if kind not in KINDS:
             raise self.error(f"Unknown AI label kind {kind!r}; expected one of {', '.join(KINDS)}")
         node = make_label(self.config, kind, self.options.get("text"), self.options.get("variant"), inline=False)
+        if "text" in self.options:
+            node["rawtext"] = self.options["text"]
         node["align"] = self.options.get("align", "left")
         node["classes"] += self.options.get("class", [])
         self.set_source_info(node)
@@ -127,7 +143,7 @@ def plain_text(node: ai_label) -> str:
 def visit_ai_label_html(self: HTML5Translator, node: ai_label) -> None:
     builder = self.builder
     page_uri = builder.get_target_uri(builder.current_docname)
-    size = builder.config.eu_ai_label_size
+    size = builder.config.eu_ai_label_inline_size if node["inline"] else builder.config.eu_ai_label_size
 
     def img(variant: str, extra_class: str = "") -> str:
         src = relative_uri(page_uri, f"_static/{icon_path(node['kind'], variant)}")
@@ -169,13 +185,15 @@ def check_config(app: Sphinx, config: Config) -> None:
 
 
 def add_fallback(app: Sphinx) -> None:
-    if app.builder.format != "html":
+    # The gettext builder needs the labels intact to extract their text
+    if app.builder.format != "html" and app.builder.name != "gettext":
         app.add_post_transform(AILabelFallback)
 
 
 def setup(app: Sphinx) -> dict[str, Any]:
     app.add_config_value("eu_ai_label_variant", "auto", "env", types=frozenset({str}))
     app.add_config_value("eu_ai_label_size", "2.5em", "html", types=frozenset({str}))
+    app.add_config_value("eu_ai_label_inline_size", "1.75em", "html", types=frozenset({str}))
     app.add_config_value("eu_ai_label_texts", {}, "env", types=frozenset({dict}))
     app.connect("config-inited", check_config)
 
