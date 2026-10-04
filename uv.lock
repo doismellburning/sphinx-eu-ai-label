@@ -571,6 +571,10 @@ dev = [
     { name = "ruff" },
     { name = "ty" },
 ]
+docs = [
+    { name = "myst-parser" },
+    { name = "sphinx" },
+]
 
 [package.metadata]
 requires-dist = [{ name = "sphinx", specifier = ">=8" }]
@@ -583,6 +587,10 @@ dev = [
     { name = "pytest" },
     { name = "ruff" },
     { name = "ty" },
+]
+docs = [
+    { name = "myst-parser" },
+    { name = "sphinx" },
 ]
 
 [[package]]

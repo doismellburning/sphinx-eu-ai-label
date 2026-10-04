@@ -1,6 +1,7 @@
 SRCDIR=src
 TESTDIR=test
-CODEDIRS=$(SRCDIR) $(TESTDIR)
+DOCSDIR=docs
+CODEDIRS=$(SRCDIR) $(TESTDIR) $(DOCSDIR)
 
 .DEFAULT_GOAL := check
 
@@ -27,6 +28,10 @@ ty:
 fix:
 	uv run ruff format $(CODEDIRS)
 	uv run ruff check --fix $(CODEDIRS)
+
+.PHONY: docs
+docs:
+	uv run sphinx-build --fail-on-warning --keep-going $(DOCSDIR) $(DOCSDIR)/_build/html
 
 .PHONY: clean
 clean:

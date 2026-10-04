@@ -4,6 +4,8 @@ A [Sphinx](https://www.sphinx-doc.org/) extension for adding the European Commis
 [icons for labelling AI-generated content](https://digital-strategy.ec.europa.eu/en/policies/eu-icons-labelling-ai-generated-content)
 to your documentation.
 
+See it in action at <https://doismellburning.github.io/sphinx-eu-ai-label/>.
+
 > [!IMPORTANT]
 > This is an unofficial project. It is not affiliated with or endorsed by the European
 > Commission or the AI Office. Using these icons does not make you compliant with
@@ -150,4 +152,5 @@ make bootstrap  # Install dependencies with uv
 make check      # Format check, lint and type check
 make test       # Tests, with a 100% coverage requirement
 make fix        # Auto-format and apply lint fixes
+make docs       # Build the showcase site into docs/_build/html
 ```

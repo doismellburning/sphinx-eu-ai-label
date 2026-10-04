@@ -50,6 +50,7 @@ select = [
 
 [tool.ruff.lint.per-file-ignores]
 "test/roots/**" = ["INP001"]
+"docs/conf.py" = ["INP001"]
 
 [dependency-groups]
 dev = [
@@ -60,3 +61,10 @@ dev = [
     "ruff",
     "ty",
 ]
+docs = [
+    "myst-parser",
+    "sphinx",
+]
+
+[tool.uv]
+default-groups = ["dev", "docs"]
