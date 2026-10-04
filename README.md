@@ -37,7 +37,7 @@ It isn't on PyPI yet, so install it from GitHub:
 pip install git+https://github.com/doismellburning/sphinx-eu-ai-label
 ```
 
-It needs Python 3.14 or later and Sphinx 8 or later.
+It needs Python 3.10 or later and Sphinx 8 or later.
 
 Then add it to your `conf.py`:
 
