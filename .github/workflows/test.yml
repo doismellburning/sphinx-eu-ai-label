@@ -18,15 +18,32 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    # Test the oldest and newest supported Python, each with the locked dependencies, the oldest supported Sphinx,
+    # and everything upgraded to its latest release
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.14"]
+        dependencies: ["locked", "sphinx-8.0", "latest"]
+
+    name: test (Python ${{ matrix.python }}, ${{ matrix.dependencies }})
+
     env:
-      UV_LOCKED: 1  # Ensure lockfile is up to date at test time
+      UV_PYTHON: ${{ matrix.python }}
+      UV_NO_SYNC: 1  # Keep the dependencies installed below, rather than syncing back to the lockfile
 
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
+      - run: uv lock --check  # Ensure lockfile is up to date at test time
       - run: make bootstrap
+      - if: matrix.dependencies == 'sphinx-8.0'
+        run: uv pip install "sphinx~=8.0.0"
+      - if: matrix.dependencies == 'latest'
+        run: uv sync --dev --upgrade
+      - run: uv run python -c "import sphinx; print(sphinx.__version__)"
       - run: make check
       # For the test that compiles LaTeX output to PDF
       - name: Install TeX Live
@@ -35,32 +52,3 @@ jobs:
           sudo apt-get install --yes --no-install-recommends \
             latexmk tex-gyre texlive-fonts-recommended texlive-latex-extra texlive-latex-recommended
       - run: make test
-
-  # Test against the oldest and newest supported Python and Sphinx, rather than just the locked versions
-  compat:
-    runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        python: ["3.10", "3.14"]
-        sphinx: ["8.0", "latest"]
-        include:
-          - sphinx: "8.0"
-            uv-args: --with sphinx~=8.0.0
-          # Upgrades everything, so new releases of any dependency show up here first
-          - sphinx: "latest"
-            uv-args: --upgrade
-
-    name: compat (Python ${{ matrix.python }}, Sphinx ${{ matrix.sphinx }})
-
-    env:
-      UV_PYTHON: ${{ matrix.python }}
-
-    steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-      - run: uv run ${{ matrix.uv-args }} python -c "import sphinx; print(sphinx.__version__)"
-      - run: uv run ${{ matrix.uv-args }} pytest
