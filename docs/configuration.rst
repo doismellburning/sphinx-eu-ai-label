@@ -31,6 +31,12 @@ These values go in ``conf.py``.
      - A label for the top of every page, such as ``"generated"`` or ``"modified white"``.
        A page can set its own with ``:ai-label:`` metadata, or opt out with
        ``:ai-label: none``.
+   * - ``eu_ai_label_latex_size``
+     - ``"2.5em"``
+     - Icon height for directive labels in LaTeX output, as a LaTeX length.
+   * - ``eu_ai_label_latex_inline_size``
+     - ``"1.75em"``
+     - Icon height for role labels in LaTeX output, as a LaTeX length.
 
 ``auto`` follows the reader's operating system or browser setting. It also follows a
 theme's own light/dark switch if the theme sets a ``data-theme="light"`` or

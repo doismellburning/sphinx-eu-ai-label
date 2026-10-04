@@ -52,6 +52,11 @@ select = [
 [tool.ruff.lint.per-file-ignores]
 "test/roots/**" = ["INP001"]
 "docs/conf.py" = ["INP001"]
+"scripts/**" = ["INP001"]
+
+[tool.ty.src]
+# Scripts declare their own dependencies inline, which aren't in the project environment
+exclude = ["scripts"]
 
 [dependency-groups]
 dev = [

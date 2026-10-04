@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shutil
 from html import escape
 from importlib.metadata import version
 from pathlib import Path
@@ -21,6 +22,7 @@ if TYPE_CHECKING:
     from sphinx.config import Config
     from sphinx.util.typing import OptionSpec
     from sphinx.writers.html5 import HTML5Translator
+    from sphinx.writers.latex import LaTeXTranslator
 
 __version__ = version("sphinx-eu-ai-label")
 
@@ -29,6 +31,7 @@ logger = logging.getLogger(__name__)
 KINDS = ("basic", "generated", "modified")
 VARIANTS = ("auto", "black", "white", "black-50", "white-50")
 ALIGNMENTS = ("left", "center", "right")
+LATEX_ENVIRONMENTS = {"left": "flushleft", "center": "center", "right": "flushright"}
 
 # What each icon says, used as its alt text. The generated and modified icons include their own wording, so
 # they need no text label by default.
@@ -43,13 +46,18 @@ PAGE_FIELD = "ai-label"
 NO_PAGE_LABEL = "none"
 
 STATIC_DIR = Path(__file__).parent / "_static"
+# Kept out of STATIC_DIR so they aren't copied into HTML output
+LATEX_ICONS_DIR = Path(__file__).parent / "latex" / "icons"
 STATIC_PREFIX = "eu_ai_label"
 CSS_FILE = f"{STATIC_PREFIX}/eu_ai_label.css"
 
 
-def icon_path(kind: str, variant: str) -> str:
-    """Path of an icon, relative to the HTML output's ``_static`` directory."""
-    return f"{STATIC_PREFIX}/icons/{kind}-{variant}.svg"
+def icon_path(kind: str, variant: str, ext: str = "svg") -> str:
+    """Path of an icon, relative to the HTML output's ``_static`` directory or the LaTeX output directory.
+
+    HTML uses the SVG icons. LaTeX uses PDF conversions of them, as pdflatex can't include SVG.
+    """
+    return f"{STATIC_PREFIX}/icons/{kind}-{variant}.{ext}"
 
 
 class ai_label(nodes.General, nodes.Element):  # noqa: N801 - docutils node naming convention
@@ -144,7 +152,7 @@ class AILabelRole(SphinxRole):
 
 
 class AILabelFallback(SphinxPostTransform):
-    """Replace labels with plain text for non-HTML builders, which can't show the icons."""
+    """Replace labels with plain text for builders that can't show the icons."""
 
     default_priority = 200
 
@@ -241,6 +249,67 @@ def add_page_label(app: Sphinx, doctree: nodes.document) -> None:
         doctree.insert(doctree.index(first) if first is not None else len(doctree.children), label)
 
 
+def label_icon_latex(self: LaTeXTranslator, node: ai_label) -> str:
+    config = self.config
+    size = config.eu_ai_label_latex_inline_size if node["inline"] else config.eu_ai_label_latex_size
+    # Print has no dark mode
+    variant = "black" if node["variant"] == "auto" else node["variant"]
+    base = icon_path(node["kind"], variant, ext="pdf").removesuffix(".pdf")
+    # Braces around the base name, as Sphinx does for images, so dots and other characters in it are safe
+    # The icons have wide margins, so centre them on the text (around 0.5ex up) rather than on the baseline
+    return rf"\raisebox{{\dimexpr 0.5ex - 0.5\height\relax}}{{\sphinxincludegraphics[height={size}]{{{{{base}}}.pdf}}}}"
+
+
+def preceding_target_ids(node: ai_label) -> set[str]:
+    """IDs of the targets just before a label, which Sphinx writes itself."""
+    ids: set[str] = set()
+    sibling = node.previous_sibling()
+    while isinstance(sibling, nodes.target):
+        ids.update(sibling["ids"], [sibling["refid"]] if "refid" in sibling else [])
+        sibling = sibling.previous_sibling()
+    return ids
+
+
+def visit_ai_label_latex(self: LaTeXTranslator, node: ai_label) -> None:
+    if not node["inline"]:
+        self.body.append(f"\n\\begin{{{LATEX_ENVIRONMENTS[node['align']]}}}\n")
+    # Targets for cross-references, such as from the directive's :name:. Sphinx already writes those for any
+    # explicit targets just before the label, and writing them again would make LaTeX warn about duplicates.
+    if ids := [id_ for id_ in node["ids"] if id_ not in preceding_target_ids(node)]:
+        self.body.append(r"\phantomsection" + "".join(self.hypertarget(id_, anchor=False) for id_ in ids))
+    # The basic icon completes custom text such as "Summary generated with", so it goes last
+    if node["kind"] != "basic":
+        self.body.append(label_icon_latex(self, node))
+        if node.children:
+            self.body.append("~")
+
+
+def depart_ai_label_latex(self: LaTeXTranslator, node: ai_label) -> None:
+    if node["kind"] == "basic":
+        if node.children:
+            self.body.append("~")
+        self.body.append(label_icon_latex(self, node))
+    if not node["inline"]:
+        self.body.append(f"\n\\end{{{LATEX_ENVIRONMENTS[node['align']]}}}\n")
+
+
+def visit_ai_label_text_latex(self: LaTeXTranslator, node: ai_label_text) -> None:
+    pass  # The text's children, including any markup, are written as usual
+
+
+def depart_ai_label_text_latex(self: LaTeXTranslator, node: ai_label_text) -> None:
+    pass
+
+
+def copy_latex_icons(app: Sphinx, exception: Exception | None) -> None:
+    if app.builder.format != "latex":
+        return
+    destination = Path(app.outdir) / STATIC_PREFIX / "icons"
+    destination.mkdir(parents=True, exist_ok=True)
+    for icon in LATEX_ICONS_DIR.glob("*.pdf"):
+        shutil.copyfile(icon, destination / icon.name)
+
+
 def check_config(app: Sphinx, config: Config) -> None:
     if config.eu_ai_label_variant not in VARIANTS:
         raise ConfigError(
@@ -258,7 +327,7 @@ def check_config(app: Sphinx, config: Config) -> None:
 
 def add_fallback(app: Sphinx) -> None:
     # The gettext builder needs the labels intact to extract their text
-    if app.builder.format != "html" and app.builder.name != "gettext":
+    if app.builder.format not in {"html", "latex"} and app.builder.name != "gettext":
         app.add_post_transform(AILabelFallback)
 
 
@@ -268,13 +337,25 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.add_config_value("eu_ai_label_inline_size", "1.75em", "html", types=frozenset({str}))
     app.add_config_value("eu_ai_label_texts", {}, "env", types=frozenset({dict}))
     app.add_config_value("eu_ai_label_page", None, "env", types=frozenset({str, type(None)}))
+    # Separate from the HTML sizes, as CSS lengths such as rem aren't valid in LaTeX
+    app.add_config_value("eu_ai_label_latex_size", "2.5em", "", types=frozenset({str}))
+    app.add_config_value("eu_ai_label_latex_inline_size", "1.75em", "", types=frozenset({str}))
     app.connect("config-inited", check_config)
 
-    app.add_node(ai_label, html=(visit_ai_label_html, depart_ai_label_html))
-    app.add_node(ai_label_text, html=(visit_ai_label_text_html, depart_ai_label_text_html))
+    app.add_node(
+        ai_label,
+        html=(visit_ai_label_html, depart_ai_label_html),
+        latex=(visit_ai_label_latex, depart_ai_label_latex),
+    )
+    app.add_node(
+        ai_label_text,
+        html=(visit_ai_label_text_html, depart_ai_label_text_html),
+        latex=(visit_ai_label_text_latex, depart_ai_label_text_latex),
+    )
     app.add_directive("ai-label", AILabelDirective)
     app.add_role("ai-label", AILabelRole())
     app.connect("builder-inited", add_fallback)
+    app.connect("build-finished", copy_latex_icons)
     # After Sphinx's metadata collector, which runs at the default priority
     app.connect("doctree-read", add_page_label, priority=600)
     app.add_css_file(CSS_FILE)

@@ -28,4 +28,10 @@ jobs:
           enable-cache: true
       - run: make bootstrap
       - run: make check
+      # For the test that compiles LaTeX output to PDF
+      - name: Install TeX Live
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            latexmk tex-gyre texlive-fonts-recommended texlive-latex-extra texlive-latex-recommended
       - run: make test
