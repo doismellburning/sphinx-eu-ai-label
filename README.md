@@ -162,6 +162,32 @@ In practice, put the directive at the top of the page or section it applies to. 
 the full placement specifications, see Section 2 of the
 [Code of Practice](https://digital-strategy.ec.europa.eu/en/policies/code-practice-ai-generated-content).
 
+## Machine-readable marking
+
+The icons are a label for people to read. Article 50(2) of the AI Act separately
+requires machine-readable marking of AI-generated content, but that obligation is on
+the *providers* of AI systems, not on people who publish their output
+([Article 50](https://ai-act-law.eu/article/50/)). This extension doesn't add any
+machine-readable marking.
+
+As of October 2026 there's no settled standard for marking AI-generated text in HTML.
+The nearest candidates are:
+
+- schema.org's [`digitalSourceType`](https://schema.org/digitalSourceType) property,
+  which uses the IPTC [digital source type](https://cv.iptc.org/newscodes/digitalsourcetype/)
+  vocabulary. It was designed for images and other media.
+- An [`ai-disclosure` meta tag](https://github.com/w3c-cg/ai-content-disclosure)
+  proposed by a W3C Community Group. Community Group reports are not W3C standards.
+
+If you want to add one of these anyway, Sphinx's `meta` directive can do it per page:
+
+```rst
+.. meta::
+   :ai-disclosure: ai-generated
+```
+
+Neither makes you compliant with Article 50.
+
 ## Licence
 
 This project's code is under the MIT licence. See [`LICENSE`](LICENSE).
