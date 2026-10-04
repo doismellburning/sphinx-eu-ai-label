@@ -145,6 +145,8 @@ def test_text_builder_fallback(app: SphinxTestApp) -> None:
     output = (Path(app.outdir) / "index.txt").read_text()
     assert "AI-generated\n\nAI\n\nSummary generated with AI\n\nAI-modified\n" in output
     assert "This paragraph was AI-generated." in output
+    assert "Paragraph written with AI" in output
+    assert "Illustrations modified with AI" in output
 
 
 @pytest.mark.sphinx("html", testroot="errors")
@@ -153,6 +155,9 @@ def test_unknown_kind(app: SphinxTestApp) -> None:
     warnings = app.warning.getvalue()
     assert "Unknown AI label kind 'nonsense'" in warnings
     assert "Unknown AI label kind 'rubbish'" in warnings
+    assert "Unknown AI label variant 'purple'" in warnings
+    assert "Expected an AI label kind and optional variant, not 'generated white extra'" in warnings
+    assert "Unknown AI label kind ''" in warnings
     assert labels(app) == []
 
 
@@ -190,6 +195,43 @@ def test_icons_bundled_and_copied(app: SphinxTestApp) -> None:
 def test_text_builder_fallback_uses_custom_text(app: SphinxTestApp) -> None:
     app.build()
     assert "Illustrations modified with AI" in (Path(app.outdir) / "index.txt").read_text()
+
+
+@pytest.mark.sphinx("html", testroot="basic")
+def test_role_variant(app: SphinxTestApp) -> None:
+    app.build()
+    label = labels(app)[5]
+    assert "eu-ai-label-inline" in label["class"]
+    assert icon_srcs(label) == ["_static/eu_ai_label/icons/generated-white.svg"]
+    assert label.select_one(".eu-ai-label-text") is None
+
+
+@pytest.mark.sphinx("html", testroot="basic")
+def test_role_text(app: SphinxTestApp) -> None:
+    app.build()
+    label = labels(app)[6]
+    assert "eu-ai-label-basic" in label["class"]
+    # Basic icon still comes after the text
+    children = [child for child in label.children if isinstance(child, Tag)]
+    assert [child.name for child in children] == ["span", "img", "img"]
+    assert one(label, ".eu-ai-label-text").get_text() == "Paragraph written with"
+
+
+@pytest.mark.sphinx("html", testroot="basic")
+def test_role_text_and_variant(app: SphinxTestApp) -> None:
+    app.build()
+    label = labels(app)[7]
+    assert one(label, ".eu-ai-label-text").get_text() == "Illustrations modified with AI"
+    assert icon_srcs(label) == ["_static/eu_ai_label/icons/modified-black-50.svg"]
+
+
+@pytest.mark.sphinx("html", testroot="myst")
+def test_myst_role(app: SphinxTestApp) -> None:
+    app.build()
+    label = labels(app)[1]
+    assert "eu-ai-label-inline" in label["class"]
+    assert one(label, ".eu-ai-label-text").get_text() == "Caption written with"
+    assert icon_srcs(label) == ["_static/eu_ai_label/icons/basic-white.svg"]
 
 
 @pytest.mark.sphinx("html", testroot="basic")

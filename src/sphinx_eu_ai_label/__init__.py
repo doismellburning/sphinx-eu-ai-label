@@ -13,6 +13,7 @@ from sphinx import addnodes
 from sphinx.errors import ConfigError
 from sphinx.transforms.post_transforms import SphinxPostTransform
 from sphinx.util.docutils import SphinxDirective, SphinxRole
+from sphinx.util.nodes import split_explicit_title
 from sphinx.util.osutil import relative_uri
 
 if TYPE_CHECKING:
@@ -98,16 +99,25 @@ class AILabelDirective(SphinxDirective):
 
 
 class AILabelRole(SphinxRole):
+    """``:ai-label:`kind [variant]``` or ``:ai-label:`Text <kind [variant]>```."""
+
     def run(self) -> tuple[list[nodes.Node], list[nodes.system_message]]:
-        kind = self.text.strip()
+        has_text, text, spec = split_explicit_title(self.text)
+        kind, *rest = spec.split() or [""]
         if kind not in KINDS:
-            msg = self.inliner.reporter.error(
-                f"Unknown AI label kind {kind!r}; expected one of {', '.join(KINDS)}", line=self.lineno
-            )
-            return [self.inliner.problematic(self.rawtext, self.rawtext, msg)], [msg]
-        node = make_label(self.config, kind, None, None, inline=True)
+            return self.problem(f"Unknown AI label kind {kind!r}; expected one of {', '.join(KINDS)}")
+        if len(rest) > 1:
+            return self.problem(f"Expected an AI label kind and optional variant, not {spec!r}")
+        variant = rest[0] if rest else None
+        if variant is not None and variant not in VARIANTS:
+            return self.problem(f"Unknown AI label variant {variant!r}; expected one of {', '.join(VARIANTS)}")
+        node = make_label(self.config, kind, text if has_text else None, variant, inline=True)
         self.set_source_info(node)
         return [node], []
+
+    def problem(self, message: str) -> tuple[list[nodes.Node], list[nodes.system_message]]:
+        msg = self.inliner.reporter.error(message, line=self.lineno)
+        return [self.inliner.problematic(self.rawtext, self.rawtext, msg)], [msg]
 
 
 class AILabelFallback(SphinxPostTransform):
