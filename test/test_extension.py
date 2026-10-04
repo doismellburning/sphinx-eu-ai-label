@@ -166,6 +166,8 @@ def test_unknown_kind(app: SphinxTestApp) -> None:
     [
         ({"eu_ai_label_variant": "purple"}, "eu_ai_label_variant must be one of"),
         ({"eu_ai_label_texts": {"invented": "x"}}, "eu_ai_label_texts has unknown kinds: invented"),
+        ({"eu_ai_label_page": "invented"}, "eu_ai_label_page: Unknown AI label kind 'invented'"),
+        ({"eu_ai_label_page": "generated purple"}, "eu_ai_label_page: Unknown AI label variant 'purple'"),
     ],
 )
 def test_invalid_config(make_app, rootdir: Path, overrides: dict, message: str) -> None:
@@ -276,3 +278,70 @@ def test_directive_name(app: SphinxTestApp) -> None:
     assert [span["id"] for span in label.select("span[id]")] == ["summary-label"]
     hrefs = [link["href"] for link in page.select("a.reference.internal")]
     assert hrefs == ["#named-label", "#summary-label"]
+
+
+@pytest.mark.sphinx("html", testroot="page-labels")
+def test_page_label_from_config(app: SphinxTestApp) -> None:
+    app.build()
+    [label] = labels(app)
+    assert label["class"] == [
+        "eu-ai-label",
+        "eu-ai-label-generated",
+        "eu-ai-label-block",
+        "eu-ai-label-align-left",
+    ]
+    # Straight after the page title
+    previous = label.find_previous_sibling()
+    assert previous is not None
+    assert previous.name == "h1"
+
+
+@pytest.mark.sphinx("html", testroot="page-labels")
+def test_page_label_from_metadata(app: SphinxTestApp) -> None:
+    app.build()
+    [label] = labels(app, "metadata")
+    assert "eu-ai-label-modified" in label["class"]
+    assert icon_srcs(label) == ["_static/eu_ai_label/icons/modified-white.svg"]
+    # The metadata isn't shown as a field list
+    assert "ai-label" not in one(soup(app, "metadata"), "section").get_text()
+
+
+@pytest.mark.sphinx("html", testroot="page-labels")
+def test_page_label_opt_out(app: SphinxTestApp) -> None:
+    app.build()
+    assert labels(app, "opt-out") == []
+
+
+# Its own srcdir, so the page is read (and warned about) rather than reused from another test's environment
+@pytest.mark.sphinx("html", testroot="page-labels", srcdir="page-labels-invalid")
+def test_page_label_invalid_metadata(app: SphinxTestApp) -> None:
+    app.build()
+    assert labels(app, "invalid") == []
+    warnings = app.warning.getvalue()
+    assert "invalid.rst: WARNING: Unknown AI label kind 'purple'" in warnings
+    assert "in the page's 'ai-label' metadata" in warnings
+
+
+@pytest.mark.sphinx("html", testroot="page-labels")
+def test_page_label_without_title(app: SphinxTestApp) -> None:
+    app.build()
+    [label] = labels(app, "untitled")
+    body = one(soup(app, "untitled"), "div[role=main]")
+    # At the top of the page, after the invisible target
+    first = body.find(lambda tag: tag.name in ("div", "p"))
+    assert first == label
+
+
+@pytest.mark.sphinx("html", testroot="page-labels", confoverrides={"eu_ai_label_page": None})
+def test_page_label_metadata_without_config(app: SphinxTestApp) -> None:
+    app.build()
+    assert labels(app) == []
+    assert len(labels(app, "metadata")) == 1
+
+
+@pytest.mark.sphinx("html", testroot="myst")
+def test_page_label_from_myst_front_matter(app: SphinxTestApp) -> None:
+    app.build()
+    [label] = labels(app, "front-matter")
+    assert "eu-ai-label-basic" in label["class"]
+    assert icon_srcs(label) == ["_static/eu_ai_label/icons/basic-black.svg"]
