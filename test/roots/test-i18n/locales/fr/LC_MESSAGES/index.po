@@ -4,3 +4,6 @@ msgstr ""
 
 msgid "Summary generated with"
 msgstr "Résumé généré avec"
+
+msgid "See `our policy <https://example.com/policy>`_"
+msgstr "Voir `notre politique <https://example.com/politique>`_"

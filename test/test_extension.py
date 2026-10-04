@@ -264,3 +264,37 @@ def test_text_translated(app: SphinxTestApp) -> None:
     assert one(label, ".eu-ai-label-text").get_text() == "Résumé généré avec"
     # Alt text describes the icon, so isn't translated
     assert one(label, "img")["alt"] == "AI"
+
+
+@pytest.mark.sphinx("html", testroot="basic")
+def test_directive_text_markup(app: SphinxTestApp) -> None:
+    app.build()
+    label = labels(app, "sub/page")[1]
+    text = one(label, ".eu-ai-label-text")
+    assert text.get_text() == "Summary written carefully with help from"
+    assert one(text, "em").get_text() == "carefully"
+    assert one(text, "a")["href"] == "https://example.com/policy"
+    # The basic icon still comes after the text
+    children = [child for child in label.children if isinstance(child, Tag)]
+    assert [child.name for child in children] == ["span", "img", "img"]
+
+
+@pytest.mark.sphinx("text", testroot="basic")
+def test_text_builder_fallback_keeps_markup(app: SphinxTestApp) -> None:
+    app.build()
+    output = (Path(app.outdir) / "sub" / "page.txt").read_text()
+    assert "Summary written *carefully* with help from AI" in output
+
+
+@pytest.mark.sphinx("gettext", testroot="i18n", srcdir="i18n-gettext")
+def test_text_markup_extracted_for_translation(app: SphinxTestApp) -> None:
+    app.build()
+    assert 'msgid "See `our policy <https://example.com/policy>`_"' in (Path(app.outdir) / "index.pot").read_text()
+
+
+@pytest.mark.sphinx("html", testroot="i18n")
+def test_text_markup_translated(app: SphinxTestApp) -> None:
+    app.build()
+    text = one(labels(app)[1], ".eu-ai-label-text")
+    assert text.get_text() == "Voir notre politique"
+    assert one(text, "a")["href"] == "https://example.com/politique"
