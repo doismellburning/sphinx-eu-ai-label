@@ -118,6 +118,13 @@ The icons appear only in HTML output (including EPUB). Other builders, such as L
 man and plain text, show the label as text instead: the label text if you set any
 (with "AI" after it for `basic`), otherwise what the icon says.
 
+## Translation
+
+Text from the directive's `:text:` option is included in the gettext catalogues, so you
+can translate it like any other text. Text from `eu_ai_label_texts` isn't, because you
+can set that per language in `conf.py`. The alt text always says what the icon says, so
+it isn't translated either.
+
 ## Accessibility
 
 The Commission's guidance encourages accessible labels. The extension follows it in
