@@ -1,7 +1,8 @@
 SRCDIR=src
 TESTDIR=test
 DOCSDIR=docs
-CODEDIRS=$(SRCDIR) $(TESTDIR) $(DOCSDIR)
+SCRIPTSDIR=scripts
+CODEDIRS=$(SRCDIR) $(TESTDIR) $(DOCSDIR) $(SCRIPTSDIR)
 
 .DEFAULT_GOAL := check
 
@@ -32,6 +33,10 @@ fix:
 .PHONY: docs
 docs:
 	uv run sphinx-build --fail-on-warning --keep-going $(DOCSDIR) $(DOCSDIR)/_build/html
+
+.PHONY: icons
+icons:
+	uv run $(SCRIPTSDIR)/icons_to_pdf.py
 
 .PHONY: clean
 clean:
