@@ -186,3 +186,12 @@ def test_icons_bundled_and_copied(app: SphinxTestApp) -> None:
 def test_text_builder_fallback_uses_custom_text(app: SphinxTestApp) -> None:
     app.build()
     assert "Illustrations modified with AI" in (Path(app.outdir) / "index.txt").read_text()
+
+
+@pytest.mark.sphinx("html", testroot="basic")
+def test_auto_variant_shows_one_icon_without_css(app: SphinxTestApp) -> None:
+    app.build()
+    light, dark = labels(app)[0].select("img")
+    # Browsers hide [hidden] natively, so without the stylesheet only the black icon shows
+    assert not light.has_attr("hidden")
+    assert dark.has_attr("hidden")
