@@ -234,6 +234,7 @@ def test_myst_role(app: SphinxTestApp) -> None:
     assert icon_srcs(label) == ["_static/eu_ai_label/icons/basic-white.svg"]
 
 
+@pytest.mark.sphinx("html", testroot="basic")
 def test_auto_variant_shows_one_icon_without_css(app: SphinxTestApp) -> None:
     app.build()
     light, dark = labels(app)[0].select("img")
