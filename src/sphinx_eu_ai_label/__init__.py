@@ -103,6 +103,7 @@ class AILabelDirective(SphinxDirective):
         "variant": lambda arg: directives.choice(arg, VARIANTS),
         "align": lambda arg: directives.choice(arg, ALIGNMENTS),
         "class": directives.class_option,
+        "name": directives.unchanged,
     }
 
     def run(self) -> list[nodes.Node]:
@@ -114,6 +115,7 @@ class AILabelDirective(SphinxDirective):
             node["rawtext"] = self.options["text"]
         node["align"] = self.options.get("align", "left")
         node["classes"] += self.options.get("class", [])
+        self.add_name(node)
         self.set_source_info(node)
         return [node]
 
@@ -189,7 +191,10 @@ def visit_ai_label_html(self: HTML5Translator, node: ai_label) -> None:
         classes += ["eu-ai-label-block", f"eu-ai-label-align-{node['align']}"]
     classes += node["classes"]
 
-    self.body.append(f'<{tag} class="{escape(" ".join(classes))}">{content}</{tag}>')
+    # Only the first ID goes on the element, so cross-references to any others get empty spans as their targets
+    id_attr = f' id="{escape(node["ids"][0])}"' if node["ids"] else ""
+    extra_ids = "".join(f'<span id="{escape(id_)}"></span>' for id_ in node["ids"][1:])
+    self.body.append(f'<{tag}{id_attr} class="{escape(" ".join(classes))}">{extra_ids}{content}</{tag}>')
     raise nodes.SkipNode
 
 
