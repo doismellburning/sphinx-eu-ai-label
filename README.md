@@ -84,6 +84,7 @@ MyST Markdown:
 | `:variant:` | `auto`, `black`, `white`, `black-50`, `white-50` | `eu_ai_label_variant` |
 | `:align:` | `left`, `center`, `right` | `left` |
 | `:class:` | Extra CSS classes | |
+| `:name:` | A name to cross-reference the label with, using `:ref:` with explicit text, e.g. ``:ref:`the summary label <summary-label>` `` | |
 
 ### Role
 
