@@ -46,3 +46,18 @@
     display: block;
   }
 }
+
+/*
+ * Themes with their own light/dark switch set data-theme on <html> (PyData, Book) or <body> (Furo). These rules are
+ * more specific than the media query above, so the theme's choice wins. Furo's data-theme="auto" matches neither, so
+ * falls back to prefers-color-scheme.
+ */
+[data-theme="light"] .eu-ai-label img.eu-ai-label-icon-light,
+[data-theme="dark"] .eu-ai-label img.eu-ai-label-icon-dark {
+  display: block;
+}
+
+[data-theme="light"] .eu-ai-label img.eu-ai-label-icon-dark,
+[data-theme="dark"] .eu-ai-label img.eu-ai-label-icon-light {
+  display: none;
+}

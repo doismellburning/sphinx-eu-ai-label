@@ -23,8 +23,10 @@ These values go in ``conf.py``.
      - Text to show next to each kind's icon, for example
        ``{"generated": "Généré par IA"}``. The directive's ``:text:`` option overrides it.
 
-``auto`` follows the reader's operating system or browser setting. It does not follow a
-theme's own light/dark switch (such as Furo's), so set a fixed variant if that matters.
+``auto`` follows the reader's operating system or browser setting. It also follows a
+theme's own light/dark switch if the theme sets a ``data-theme="light"`` or
+``data-theme="dark"`` attribute on ``<html>`` or ``<body>``, as Furo, PyData and Book do.
+For other themes with a switch, set a fixed variant.
 
 This site's configuration:
 

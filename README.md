@@ -105,8 +105,10 @@ These values go in `conf.py`:
 | `eu_ai_label_size` | `"2.5em"` | Icon height, as any CSS length. The icons have wide margins built in, so the visible mark is smaller than this |
 | `eu_ai_label_texts` | `{}` | Text to show next to each kind's icon, for example `{"generated": "Généré par IA"}` |
 
-`auto` follows the reader's operating system or browser setting. It does not follow a
-theme's own light/dark switch (such as Furo's), so set a fixed variant if that matters.
+`auto` follows the reader's operating system or browser setting. It also follows a
+theme's own light/dark switch if the theme sets a `data-theme="light"` or
+`data-theme="dark"` attribute on `<html>` or `<body>`, as Furo, PyData and Book do. For
+other themes with a switch, set a fixed variant.
 
 The extension also adds a small stylesheet, `_static/eu_ai_label/eu_ai_label.css`.
 Labels have the CSS classes `eu-ai-label`, `eu-ai-label-{kind}`, and either
