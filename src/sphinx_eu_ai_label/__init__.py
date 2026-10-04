@@ -135,15 +135,18 @@ def visit_ai_label_html(self: HTML5Translator, node: ai_label) -> None:
     page_uri = builder.get_target_uri(builder.current_docname)
     size = builder.config.eu_ai_label_inline_size if node["inline"] else builder.config.eu_ai_label_size
 
-    def img(variant: str, extra_class: str = "") -> str:
+    def img(variant: str, extra_class: str = "", hidden: bool = False) -> str:
         src = relative_uri(page_uri, f"_static/{icon_path(node['kind'], variant)}")
         classes = " ".join(filter(None, ["eu-ai-label-icon", extra_class]))
+        hidden_attr = " hidden" if hidden else ""
         return (
-            f'<img class="{classes}" src="{escape(src)}" alt="{escape(node["alt"])}" style="height: {escape(size)}" />'
+            f'<img class="{classes}" src="{escape(src)}" alt="{escape(node["alt"])}" style="height: {escape(size)}"'
+            f"{hidden_attr} />"
         )
 
     if node["variant"] == "auto":
-        icons = img("black", "eu-ai-label-icon-light") + img("white", "eu-ai-label-icon-dark")
+        # The dark icon is hidden so only one shows without the stylesheet, which overrides this in dark mode
+        icons = img("black", "eu-ai-label-icon-light") + img("white", "eu-ai-label-icon-dark", hidden=True)
     else:
         icons = img(node["variant"])
 
