@@ -5,7 +5,7 @@ readme = "README.md"
 description = "Sphinx extension for adding the European Commission's AI-generated content labels to documentation"
 license = "MIT"
 license-files = ["LICENSE"]
-requires-python = ">=3.14"
+requires-python = ">=3.10"
 dependencies = [
     "sphinx>=8",
 ]
@@ -28,6 +28,7 @@ show_contexts = true
 
 [tool.ruff]
 line-length = 120
+target-version = "py310"
 
 [tool.ruff.lint]
 select = [
