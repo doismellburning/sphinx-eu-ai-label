@@ -89,6 +89,8 @@ def test_role(app: SphinxTestApp) -> None:
     assert "eu-ai-label-inline" in label["class"]
     assert label.select_one(".eu-ai-label-text") is None
     assert {img["alt"] for img in label.select("img")} == {"AI-generated"}
+    # Smaller than block labels, so it doesn't stretch the line as much
+    assert {img["style"] for img in label.select("img")} == {"height: 1.75em"}
 
 
 @pytest.mark.sphinx("html", testroot="basic")
@@ -111,6 +113,7 @@ def test_static_files(app: SphinxTestApp) -> None:
     confoverrides={
         "eu_ai_label_variant": "black-50",
         "eu_ai_label_size": "2rem",
+        "eu_ai_label_inline_size": "1.2rem",
         "eu_ai_label_texts": {"generated": "Généré par IA"},
     },
 )
@@ -123,6 +126,7 @@ def test_config(app: SphinxTestApp) -> None:
     # Alt text describes the icon, whatever the label says
     assert img["alt"] == "AI-generated"
     assert img["style"] == "height: 2rem"
+    assert {img["style"] for img in labels(app)[4].select("img")} == {"height: 1.2rem"}
     # Explicit options still win over config
     assert icon_srcs(labels(app)[2]) == ["_static/eu_ai_label/icons/basic-white.svg"]
 
@@ -193,3 +197,19 @@ def test_stylesheet_follows_theme_switches(theme: str) -> None:
     # Furo sets data-theme on <body>, PyData and Book on <html>; an attribute selector matches either
     css = (sphinx_eu_ai_label.STATIC_DIR / sphinx_eu_ai_label.CSS_FILE).read_text()
     assert f'[data-theme="{theme}"] .eu-ai-label img.eu-ai-label-icon-{theme}' in css
+
+
+# gettext needs its own srcdir, as its environment is incompatible with the HTML builds' doctrees
+@pytest.mark.sphinx("gettext", testroot="basic", srcdir="basic-gettext")
+def test_text_extracted_for_translation(app: SphinxTestApp) -> None:
+    app.build()
+    assert 'msgid "Summary generated with"' in (Path(app.outdir) / "index.pot").read_text()
+
+
+@pytest.mark.sphinx("html", testroot="i18n")
+def test_text_translated(app: SphinxTestApp) -> None:
+    app.build()
+    label = labels(app)[0]
+    assert one(label, ".eu-ai-label-text").get_text() == "Résumé généré avec"
+    # Alt text describes the icon, so isn't translated
+    assert one(label, "img")["alt"] == "AI"

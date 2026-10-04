@@ -16,8 +16,12 @@ These values go in ``conf.py``.
        ``prefers-color-scheme``.
    * - ``eu_ai_label_size``
      - ``"2.5em"``
-     - Icon height, as any CSS length. The icons have wide margins built in, so the
-       visible mark is smaller than this.
+     - Icon height for directive labels, as any CSS length. The icons have wide margins
+       built in, so the visible mark is smaller than this.
+   * - ``eu_ai_label_inline_size``
+     - ``"1.75em"``
+     - Icon height for role labels. It's smaller so that labels in running text don't
+       stretch the line as much.
    * - ``eu_ai_label_texts``
      - ``{}``
      - Text to show next to each kind's icon, for example
