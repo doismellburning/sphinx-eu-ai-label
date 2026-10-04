@@ -234,6 +234,13 @@ def test_myst_role(app: SphinxTestApp) -> None:
     assert icon_srcs(label) == ["_static/eu_ai_label/icons/basic-white.svg"]
 
 
+@pytest.mark.parametrize("theme", ["light", "dark"])
+def test_stylesheet_follows_theme_switches(theme: str) -> None:
+    # Furo sets data-theme on <body>, PyData and Book on <html>; an attribute selector matches either
+    css = (sphinx_eu_ai_label.STATIC_DIR / sphinx_eu_ai_label.CSS_FILE).read_text()
+    assert f'[data-theme="{theme}"] .eu-ai-label img.eu-ai-label-icon-{theme}' in css
+
+
 # gettext needs its own srcdir, as its environment is incompatible with the HTML builds' doctrees
 @pytest.mark.sphinx("gettext", testroot="basic", srcdir="basic-gettext")
 def test_text_extracted_for_translation(app: SphinxTestApp) -> None:
