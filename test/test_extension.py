@@ -282,7 +282,8 @@ def test_directive_name(app: SphinxTestApp) -> None:
     assert label["id"] == "named-label"
     # A label with an explicit target as well gets both IDs
     assert [span["id"] for span in label.select("span[id]")] == ["summary-label"]
-    hrefs = [link["href"] for link in page.select("a.reference.internal")]
+    # Only links in the page body, not the sidebar's table of contents
+    hrefs = [link["href"] for link in one(page, "div[role=main]").select("a.reference.internal")]
     assert hrefs == ["#named-label", "#summary-label"]
 
 
