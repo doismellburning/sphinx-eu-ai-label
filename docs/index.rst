@@ -22,11 +22,11 @@ This site is built with the extension, so every label on it is real output.
 Quick start
 -----------
 
-Install it from GitHub:
+Install it from `PyPI <https://pypi.org/project/sphinx-eu-ai-label/>`_:
 
 .. code-block:: console
 
-   pip install git+https://github.com/doismellburning/sphinx-eu-ai-label
+   pip install sphinx-eu-ai-label
 
 Add it to your ``conf.py``:
 
