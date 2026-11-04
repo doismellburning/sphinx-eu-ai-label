@@ -4,7 +4,10 @@ DOCSDIR=docs
 SCRIPTSDIR=scripts
 CODEDIRS=$(SRCDIR) $(TESTDIR) $(DOCSDIR) $(SCRIPTSDIR)
 
-.DEFAULT_GOAL := check
+.DEFAULT_GOAL := all
+
+.PHONY: all
+all: check test
 
 .PHONY: bootstrap
 bootstrap:

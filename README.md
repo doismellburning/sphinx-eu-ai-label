@@ -221,6 +221,7 @@ them for LaTeX output.
 
 ```console
 make bootstrap  # Install dependencies with uv
+make            # check, then test
 make check      # Format check, lint and type check
 make test       # Tests, with a 100% coverage requirement
 make fix        # Auto-format and apply lint fixes
