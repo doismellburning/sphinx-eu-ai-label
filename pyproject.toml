@@ -6,9 +6,46 @@ description = "Sphinx extension for adding the European Commission's AI-generate
 license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.10"
+authors = [
+    { name = "Kristian Glass" },
+]
+keywords = [
+    "sphinx",
+    "sphinx-extension",
+    "documentation",
+    "ai",
+    "ai-act",
+    "eu",
+    "label",
+    "transparency",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: Sphinx",
+    "Framework :: Sphinx :: Extension",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Documentation",
+    "Topic :: Documentation :: Sphinx",
+    "Typing :: Typed",
+]
 dependencies = [
     "sphinx>=8",
 ]
+
+[project.urls]
+Homepage = "https://github.com/doismellburning/sphinx-eu-ai-label"
+Documentation = "https://doismellburning.github.io/sphinx-eu-ai-label/"
+Source = "https://github.com/doismellburning/sphinx-eu-ai-label"
+Issues = "https://github.com/doismellburning/sphinx-eu-ai-label/issues"
 
 [build-system]
 requires = ["hatchling"]
