@@ -31,10 +31,10 @@ add text.
 
 ## Installation
 
-It isn't on PyPI yet, so install it from GitHub:
+Install it from [PyPI](https://pypi.org/project/sphinx-eu-ai-label/):
 
 ```console
-pip install git+https://github.com/doismellburning/sphinx-eu-ai-label
+pip install sphinx-eu-ai-label
 ```
 
 It needs Python 3.10 or later and Sphinx 8 or later.
@@ -211,7 +211,7 @@ In practice, put the directive at the top of the page or section it applies to, 
 
 ## Licence
 
-This project's code is under the MIT licence. See [`LICENSE`](LICENSE).
+This project's code is under the MIT licence. See [`LICENSE`](https://github.com/doismellburning/sphinx-eu-ai-label/blob/main/LICENSE).
 The icons are published by the European Commission, which says they are "made publicly
 available for everyone to use freely, without the need for attribution". This package
 includes the SVG files unmodified, apart from their file names, and PDF conversions of
