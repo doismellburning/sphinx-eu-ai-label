@@ -228,3 +228,10 @@ make fix        # Auto-format and apply lint fixes
 make docs       # Build the showcase site into docs/_build/html
 make icons      # Regenerate the PDF icons for LaTeX from the SVGs
 ```
+
+### Releasing
+
+The version comes from git tags, so there's nothing to bump. To release,
+[create a GitHub Release](https://github.com/doismellburning/sphinx-eu-ai-label/releases/new)
+with a new tag on `main` named `v` followed by the version (e.g. `v0.2.0`).
+Pushing the tag runs the publish workflow, which builds the package and uploads it to PyPI.
